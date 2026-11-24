@@ -40,6 +40,10 @@ struct KnowledgeView: View {
                         }
                     }
                 }
+                if KnowledgeEntry.Kind.allCases.allSatisfy({ entries($0).isEmpty }) {
+                    ContentUnavailableView.search(text: search)
+                        .listRowBackground(Color.clear)
+                }
             }
             .navigationTitle("Wissen")
             .searchable(text: $search, prompt: "Charaktere, Orte …")
@@ -61,6 +65,19 @@ struct KnowledgeDetailView: View {
                     .font(.caption.weight(.heavy)).foregroundStyle(Theme.orange)
                 GradientTitle(text: entry.name, size: 32)
                 Text(entry.subtitle).font(.headline).foregroundStyle(Theme.textSecondary)
+
+                if let stats = entry.stats, !stats.isEmpty {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
+                        ForEach(stats.keys.sorted(), id: \.self) { key in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(key.uppercased()).font(.caption2.weight(.heavy)).foregroundStyle(Theme.orange)
+                                Text(stats[key] ?? "").font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .neonCard(padding: 12)
+                        }
+                    }
+                }
 
                 Text(entry.text)
                     .frame(maxWidth: .infinity, alignment: .leading)

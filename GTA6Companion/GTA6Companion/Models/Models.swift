@@ -47,8 +47,27 @@ struct Mission: Identifiable, Codable, Hashable {
 }
 
 enum LocationCategory: String, Codable, CaseIterable, Identifiable {
-    case landmark, mission, safehouse, shop, activity, collectible
+    case landmark, mission, safehouse, shop, activity, collectible, other
     var id: String { rawValue }
+
+    /// Unbekannte Kategorien (z. B. aus Importen) werden per Stichwort zugeordnet statt den Import abzubrechen.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = LocationCategory(rawValue: raw) ?? LocationCategory(fuzzy: raw)
+    }
+
+    init(fuzzy raw: String) {
+        let s = raw.lowercased()
+        func has(_ words: String...) -> Bool { words.contains { s.contains($0) } }
+        if let exact = LocationCategory(rawValue: s) { self = exact }
+        else if has("collect", "sammel", "hidden", "package", "card", "relic", "token", "photo", "easter") { self = .collectible }
+        else if has("mission", "story", "heist", "job", "stranger") { self = .mission }
+        else if has("safe", "house", "home", "propert", "apartment", "motel") { self = .safehouse }
+        else if has("shop", "store", "ammu", "cloth", "barber", "tattoo", "mod", "dealer", "gas") { self = .shop }
+        else if has("activit", "race", "side", "hobby", "minigame", "event", "club", "bar") { self = .activity }
+        else if has("landmark", "region", "city", "district", "area", "town", "park") { self = .landmark }
+        else { self = .other }
+    }
 
     var label: String {
         switch self {
@@ -58,6 +77,7 @@ enum LocationCategory: String, Codable, CaseIterable, Identifiable {
         case .shop: "Shops"
         case .activity: "Aktivitäten"
         case .collectible: "Sammelobjekte"
+        case .other: "Sonstiges"
         }
     }
 
@@ -69,6 +89,7 @@ enum LocationCategory: String, Codable, CaseIterable, Identifiable {
         case .shop: "bag.fill"
         case .activity: "gamecontroller.fill"
         case .collectible: "star.fill"
+        case .other: "circle.fill"
         }
     }
 
@@ -80,6 +101,7 @@ enum LocationCategory: String, Codable, CaseIterable, Identifiable {
         case .shop: Theme.orange
         case .activity: Color(hex: 0x4DA3FF)
         case .collectible: Theme.gold
+        case .other: Color(hex: 0xB8B8D0)
         }
     }
 }
@@ -96,14 +118,43 @@ struct MapLocation: Identifiable, Codable, Hashable {
     var placeholder: Bool? = nil
 
     var isPlaceholder: Bool { placeholder ?? false }
+    var point: CGPoint { CGPoint(x: x, y: y) }
+}
+
+/// Vom Nutzer gesetzter Kartenpunkt mit Notiz.
+struct UserPin: Identifiable, Codable, Hashable {
+    var id = UUID()
+    var name: String
+    var note: String
+    var x: Double
+    var y: Double
+    var created = Date()
 }
 
 struct KnowledgeEntry: Identifiable, Codable, Hashable {
     enum Kind: String, Codable, CaseIterable, Identifiable {
-        case character, region
+        case character, region, vehicle, weapon, business
         var id: String { rawValue }
-        var label: String { self == .character ? "Charaktere" : "Regionen" }
-        var icon: String { self == .character ? "person.crop.square.fill" : "map.circle.fill" }
+
+        var label: String {
+            switch self {
+            case .character: "Charaktere"
+            case .region: "Regionen"
+            case .vehicle: "Fahrzeuge"
+            case .weapon: "Waffen"
+            case .business: "Geschäfte & Immobilien"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .character: "person.crop.square.fill"
+            case .region: "map.circle.fill"
+            case .vehicle: "car.fill"
+            case .weapon: "scope"
+            case .business: "building.2.fill"
+            }
+        }
     }
 
     let id: String
@@ -113,4 +164,6 @@ struct KnowledgeEntry: Identifiable, Codable, Hashable {
     let text: String
     var source: String? = nil
     var locationID: String? = nil
+    /// Freie Kennwerte, z. B. ["Preis": "$250.000", "Klasse": "Sport"]
+    var stats: [String: String]? = nil
 }

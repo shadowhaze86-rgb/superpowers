@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "id": "a1", "geometry": { "type": "Point", "coordinates": [120, -80] },
+      "properties": { "name": "Beispiel A", "category": "Hidden Package", "region": "Vice City", "description": "Testpunkt" } },
+    { "type": "Feature", "id": "a2", "geometry": { "type": "Point", "coordinates": [40, -20] },
+      "properties": { "name": "Beispiel B", "category": "Safehouse", "region": "Port Gellhorn" } },
+    { "type": "Feature", "id": "a3", "geometry": { "type": "Point", "coordinates": [90, -120] },
+      "properties": { "name": "Beispiel C", "category": "Ammu-Nation", "region": "Grassrivers" } }
+  ]
+}

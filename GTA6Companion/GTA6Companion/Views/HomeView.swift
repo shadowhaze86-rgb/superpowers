@@ -76,9 +76,15 @@ struct HomeView: View {
         StatCard(title: "Gold-Ziele", icon: "medal.fill",
                  done: content.goldObjectives.filter { progress.isDone($0) }.count,
                  total: content.goldObjectives.count, color: Theme.gold)
-        StatCard(title: "Sammelobjekte", icon: "star.fill",
-                 done: content.collectibles.filter { progress.isFound($0) }.count,
-                 total: content.collectibles.count, color: Theme.teal)
+        NavigationLink {
+            CollectiblesView()
+        } label: {
+            StatCard(title: "Sammelobjekte", icon: "star.fill",
+                     done: content.collectibles.filter { progress.isFound($0) }.count,
+                     total: content.collectibles.count, color: Theme.teal,
+                     showsChevron: true)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -88,12 +94,19 @@ struct StatCard: View {
     let done: Int
     let total: Int
     let color: Color
+    var showsChevron = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: icon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
+            HStack {
+                Label(title, systemImage: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(color)
+                Spacer()
+                if showsChevron {
+                    Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(Theme.textSecondary)
+                }
+            }
             Text("\(done) / \(total)").font(Theme.title(24))
             ProgressView(value: total == 0 ? 0 : Double(done), total: Double(max(total, 1)))
                 .tint(color)

@@ -1,18 +1,24 @@
 import Foundation
 import Observation
 
-/// Speichert den Spielfortschritt lokal (UserDefaults).
+/// Spielfortschritt: lokal (UserDefaults) + per iCloud zwischen iPhone und iPad synchronisiert.
+@MainActor
 @Observable
 final class ProgressStore {
     private(set) var completedMissions: Set<String> = []
     private(set) var completedObjectives: Set<String> = []
     private(set) var foundLocations: Set<String> = []
+    /// Wird bei jeder Änderung erhöht – Auslöser für Widget-Update und Live-Aktivität.
+    private(set) var revision = 0
 
     private let defaults: UserDefaults
+    @ObservationIgnored private let cloud = CloudSync()
+
     private enum Key {
         static let missions = "progress.missions"
         static let objectives = "progress.objectives"
         static let locations = "progress.locations"
+        static let all = [missions, objectives, locations]
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -20,6 +26,24 @@ final class ProgressStore {
         completedMissions = Set(defaults.stringArray(forKey: Key.missions) ?? [])
         completedObjectives = Set(defaults.stringArray(forKey: Key.objectives) ?? [])
         foundLocations = Set(defaults.stringArray(forKey: Key.locations) ?? [])
+
+        cloud.onExternalChange = { [weak self] keys in
+            MainActor.assumeIsolated { self?.pullFromCloud(keys: keys) }
+        }
+        // Neues Gerät ohne lokalen Stand → aus iCloud übernehmen
+        if completedMissions.isEmpty && completedObjectives.isEmpty && foundLocations.isEmpty {
+            pullFromCloud(keys: Key.all)
+        }
+    }
+
+    var iCloudAvailable: Bool { cloud.isAvailable }
+
+    private func pullFromCloud(keys: [String]) {
+        var changed = false
+        if keys.contains(Key.missions), let v = cloud.strings(Key.missions) { completedMissions = Set(v); changed = true }
+        if keys.contains(Key.objectives), let v = cloud.strings(Key.objectives) { completedObjectives = Set(v); changed = true }
+        if keys.contains(Key.locations), let v = cloud.strings(Key.locations) { foundLocations = Set(v); changed = true }
+        if changed { save(pushToCloud: false) }
     }
 
     // MARK: Missionen
@@ -91,6 +115,19 @@ final class ProgressStore {
         return present.reduce(0) { $0 + $1.weight * $1.value } / weightSum
     }
 
+    func snapshot(content: ContentStore) -> ProgressSnapshot {
+        ProgressSnapshot(
+            overall: overall(content: content),
+            storyDone: content.missions.filter { isDone($0) }.count,
+            storyTotal: content.missions.count,
+            goldDone: content.goldObjectives.filter { isDone($0) }.count,
+            goldTotal: content.goldObjectives.count,
+            collectiblesDone: content.collectibles.filter { isFound($0) }.count,
+            collectiblesTotal: content.collectibles.count,
+            nextMission: content.missions.first { !isDone($0) }?.title
+        )
+    }
+
     func reset() {
         completedMissions.removeAll()
         completedObjectives.removeAll()
@@ -98,9 +135,16 @@ final class ProgressStore {
         save()
     }
 
-    private func save() {
-        defaults.set(Array(completedMissions), forKey: Key.missions)
-        defaults.set(Array(completedObjectives), forKey: Key.objectives)
-        defaults.set(Array(foundLocations), forKey: Key.locations)
+    private func save(pushToCloud: Bool = true) {
+        let values: [(String, [String])] = [
+            (Key.missions, Array(completedMissions)),
+            (Key.objectives, Array(completedObjectives)),
+            (Key.locations, Array(foundLocations)),
+        ]
+        for (key, value) in values {
+            defaults.set(value, forKey: key)
+            if pushToCloud { cloud.set(value, for: key) }
+        }
+        revision += 1
     }
 }
