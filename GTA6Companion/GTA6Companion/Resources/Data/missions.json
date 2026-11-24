@@ -1,0 +1,37 @@
+[
+  {
+    "id": "demo-m01", "chapter": 1, "chapterTitle": "Beispielkapitel",
+    "title": "Beispielmission 1", "character": "both", "giver": "Auftraggeber",
+    "summary": "Demo-Eintrag. Ersetze diesen Text durch das echte Missions-Briefing.",
+    "objectives": [
+      { "id": "demo-m01-o1", "text": "Pflichtziel 1" },
+      { "id": "demo-m01-o2", "text": "Pflichtziel 2" },
+      { "id": "demo-m01-g1", "text": "Bonusziel (Gold)", "gold": true }
+    ],
+    "tips": ["Tipp-Text hier eintragen."],
+    "reward": "$0",
+    "locationID": "demo-mission-start-1",
+    "placeholder": true
+  },
+  {
+    "id": "demo-m02", "chapter": 1, "chapterTitle": "Beispielkapitel",
+    "title": "Beispielmission 2", "character": "lucia",
+    "summary": "Demo-Eintrag für eine Lucia-Mission.",
+    "objectives": [
+      { "id": "demo-m02-o1", "text": "Pflichtziel" },
+      { "id": "demo-m02-g1", "text": "Bonusziel (Gold)", "gold": true }
+    ],
+    "locationID": "region-vice-city",
+    "placeholder": true
+  },
+  {
+    "id": "demo-m03", "chapter": 2, "chapterTitle": "Zweites Beispielkapitel",
+    "title": "Beispielmission 3", "character": "jason",
+    "summary": "Demo-Eintrag für eine Jason-Mission.",
+    "objectives": [
+      { "id": "demo-m03-o1", "text": "Pflichtziel" }
+    ],
+    "locationID": "region-leonida-keys",
+    "placeholder": true
+  }
+]
